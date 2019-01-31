@@ -18,7 +18,7 @@ const int  BUFFER_LENGTH = 512;
 int getLocalVersion();
 
 // Return the contents of data.bin
-string getFile();
+int getFile(char* charArray);
 
 int main()
 {
@@ -29,6 +29,7 @@ int main()
 	SOCKET ClientSocket = INVALID_SOCKET;
 	
 	char port[10];
+	
 	snprintf(port, sizeof(port), "%d", PORT);
 	int localVersion = getLocalVersion();
 	printf("local version %d\n", localVersion);
@@ -141,11 +142,17 @@ int main()
 			printf("bytes received: %d\n", req);
 			printf("buffer received: %.*s\n", req, buffer);
 			if (getLocalVersion() != 56) {
-				printf("version are different");
-				res = send(ClientSocket, buffer, req, 0);
+				printf("version are different\n");
+				char temp[BUFFER_LENGTH] = "test\n";
+				//int tempLength = getFile(temp);
+				printf("String sent to send: %.*s\n", strlen(temp),temp);
+				res = send(ClientSocket, temp, strlen(temp), 0);
+				printf("bytes sent %d\n", res);
+
+				
 			}
 			else {
-				printf("versions match");
+				printf("versions match\n");
 				res = send(ClientSocket, buffer, req, 0);
 			}
 			// echo the buffer back through response
@@ -179,4 +186,21 @@ int getLocalVersion()
 	return version;
 }
 
-string getFile()
+int getFile(char* charArray) {
+
+	ifstream dataFile;
+	openInputFile(dataFile, FILENAME);
+
+	char buffer[BUFFER_LENGTH];
+	char newVersion[] = "";
+	int num;
+
+	do {
+		num = readInt(dataFile);
+		snprintf(buffer, 20, "%d", num);
+		strcat_s(newVersion, buffer);
+	} while (num != EOF);
+
+	charArray = newVersion;
+	return strlen(charArray);
+}
