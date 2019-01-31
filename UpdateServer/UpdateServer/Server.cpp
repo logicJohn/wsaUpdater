@@ -12,6 +12,7 @@ const int  PORT = 50000;
 const int  QUERY = 1;
 const int  UPDATE = 2;
 const int  BUFFER_LENGTH = 512;
+int requestsHandled = 0;
 
 // Returns the version number from the data file
 // Writen by Bobby Hoggard :)
@@ -23,7 +24,7 @@ int getFile(char* charArray);
 int main()
 {
 	// Add your code here for the server
-	
+	cout << "Update server\n";
 	// Declare sockets for listening and server, initialize to invalid
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
@@ -32,7 +33,8 @@ int main()
 	
 	snprintf(port, sizeof(port), "%d", PORT);
 	int localVersion = getLocalVersion();
-	printf("local version %d\n", localVersion);
+	printf("Current data file version: v%d\n", localVersion);
+	printf("Running on port number %d\n\n", PORT);
 
 	//Create Windows Socket data object
 	
@@ -115,7 +117,7 @@ int main()
 		return 1;
 	}
 
-
+	cout << "\nWaiting for connections...\n";
 	// Accept a client socket
 	ClientSocket = accept(ListenSocket, NULL, NULL);
 	//Test to see if accept worked
