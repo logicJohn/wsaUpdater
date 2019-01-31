@@ -17,7 +17,8 @@ const int  BUFFER_LENGTH = 512;
 // Writen by Bobby Hoggard :)
 int getLocalVersion();
 
-
+// Return the contents of data.bin
+string getFile();
 
 int main()
 {
@@ -177,3 +178,5 @@ int getLocalVersion()
 
 	return version;
 }
+
+string getFile()
