@@ -2,6 +2,7 @@
 #include <Ws2tcpip.h>
 #include <iostream>
 #include "FileHelper.h"
+
 using namespace std;
 
 #pragma comment(lib, "Ws2_32.lib")
@@ -42,8 +43,9 @@ int main()
 	WSADATA wsaData;
 
 	//ports read as strings
-	char port[] = "null";
-	itoa(PORT, port, 10);
+	char port[10];
+	snprintf(port, sizeof(port), "%d", PORT);
+	//itoa(PORT, port, 10);
 
 	/*
 	*****WSADATA STUCT LAYOUT*****
@@ -63,7 +65,6 @@ int main()
 
 	//socket for sending request 
 	SOCKET ReqSocket = INVALID_SOCKET;
-
 	
 
 	// Start Window Socket
@@ -127,11 +128,13 @@ int main()
 	}
 
 	// set buffer length as well as req and res
-	char buffer[BUFFER_LENGTH];
+	char buffer[BUFFER_LENGTH] = "hello World\n";
+	snprintf(buffer, sizeof(buffer), "%d", localVersion);
 	int req, res;
 
+
 	// This sends the buffer, but the third paramater must equal the length of the buffer msg
-	req = send(ReqSocket, buffer, BUFFER_LENGTH, 0);
+	req = send(ReqSocket, buffer, strlen(buffer), 0);
 	// Test to see if request was successful
 	if (req == SOCKET_ERROR) {
 		printf("send error: %d\n", WSAGetLastError());

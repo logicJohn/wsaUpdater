@@ -27,8 +27,10 @@ int main()
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
 	
-	char port[] = "null";
-	itoa(PORT, port, 10);
+	char port[10];
+	snprintf(port, sizeof(port), "%d", PORT);
+	int localVersion = getLocalVersion();
+	printf("local version %d\n", localVersion);
 
 	//Create Windows Socket data object
 	
@@ -110,10 +112,7 @@ int main()
 		WSACleanup();
 		return 1;
 	}
-	else {
-		// this can be commented out
-		printf("Listening on %s:%s", IPADDR , port);
-	}
+
 
 	// Accept a client socket
 	ClientSocket = accept(ListenSocket, NULL, NULL);
@@ -123,6 +122,10 @@ int main()
 		closesocket(ListenSocket);
 		WSACleanup();
 		return 1;
+	}
+	else {
+		// this can be commented out
+		printf("Listening on %s:%s\n", IPADDR, port);
 	}
 
 	// receive data until shutdown
@@ -135,7 +138,15 @@ int main()
 		req = recv(ClientSocket, buffer, BUFFER_LENGTH, 0);
 		if (req > 0) {
 			printf("bytes received: %d\n", req);
-			
+			printf("buffer received: %.*s\n", req, buffer);
+			if (getLocalVersion() != 56) {
+				printf("version are different");
+				res = send(ClientSocket, buffer, req, 0);
+			}
+			else {
+				printf("versions match");
+				res = send(ClientSocket, buffer, req, 0);
+			}
 			// echo the buffer back through response
 			// instead of echo buffer we need to echo data.bin for client
 			res = send(ClientSocket, buffer, req, 0);
