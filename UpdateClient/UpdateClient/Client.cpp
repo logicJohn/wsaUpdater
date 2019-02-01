@@ -128,7 +128,7 @@ int main()
 	}
 
 	// set buffer length as well as req and res
-	char buffer[BUFFER_LENGTH] = "hello World\n";
+	char buffer[BUFFER_LENGTH] = "\n";
 	snprintf(buffer, sizeof(buffer), "%d", localVersion);
 	int req, res;
 
@@ -160,8 +160,11 @@ int main()
 	//Reveive data until the server ends connection
 	do {
 		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
+
 		if (res > 0) {
 			printf("Bytes reveived: %d\n", res);
+			printf("Message received: %.*s\n", strlen(buffer), buffer);
+			
 		}
 		else if (res == 0) {
 			printf("connection closed\n");

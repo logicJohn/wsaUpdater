@@ -137,27 +137,30 @@ int main()
 
 	do {
 		//store the request from client
+		
 		req = recv(ClientSocket, buffer, BUFFER_LENGTH, 0);
 		if (req > 0) {
 			printf("bytes received: %d\n", req);
 			printf("buffer received: %.*s\n", req, buffer);
-			if (getLocalVersion() != 56) {
+			if (getLocalVersion() != 56) { // This line needs to be adjusted to compare the char [] that we get from req and the int from getLocalVersion
 				printf("version are different\n");
-				char temp[BUFFER_LENGTH] = "test\n";
+				char temp[BUFFER_LENGTH] = "505\n";
 				//int tempLength = getFile(temp);
 				printf("String sent to send: %.*s\n", strlen(temp),temp);
 				res = send(ClientSocket, temp, strlen(temp), 0);
 				printf("bytes sent %d\n", res);
 
-				
 			}
 			else {
 				printf("versions match\n");
-				res = send(ClientSocket, buffer, req, 0);
+				char temp[10] = "200\n";
+				printf("String sent to send %.*s\n", strlen(temp), temp);
+				res = send(ClientSocket, temp, strlen(temp), 0);
+				printf("bytes sent %d\n", res);
 			}
 			// echo the buffer back through response
 			// instead of echo buffer we need to echo data.bin for client
-			res = send(ClientSocket, buffer, req, 0);
+			//res = send(ClientSocket, buffer, req, 0);
 			if (res == SOCKET_ERROR) {
 				printf("failed to send: %d\n", WSAGetLastError());
 				closesocket(ClientSocket);
