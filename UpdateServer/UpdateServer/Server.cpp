@@ -106,69 +106,93 @@ int main()
 		//free's the result section
 		freeaddrinfo(result);
 	}
-
-	// Listen for request on socket
-	wsResult = listen(ListenSocket, SOMAXCONN);
-	// Test to see if socket is listening
-	if (wsResult == SOCKET_ERROR) {
-		printf("Listen error: %ld\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
-
-	cout << "\nWaiting for connections...\n";
-	// Accept a client socket
-	ClientSocket = accept(ListenSocket, NULL, NULL);
-	//Test to see if accept worked
-	if (ClientSocket == INVALID_SOCKET) {
-		printf("accept socket error: %d\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
-	else {
-		// this can be commented out
-		printf("Listening on %s:%s\n", IPADDR, port);
-	}
-
+	
 	// receive data until shutdown
 	// buffer length of bytes
 	char buffer[BUFFER_LENGTH];
 	int req, res; // request, response
 
-	do {
-		//store the request from client
-		req = recv(ClientSocket, buffer, BUFFER_LENGTH, 0);
-		if (req > 0) {
-			printf("bytes received: %d\n", req);
-			printf("buffer received: %.*s\n", req, buffer);
-			if (getLocalVersion() != 56) {
-				printf("version are different\n");
-				char temp[BUFFER_LENGTH] = "test\n";
-				//int tempLength = getFile(temp);
-				printf("String sent to send: %.*s\n", strlen(temp),temp);
-				res = send(ClientSocket, temp, strlen(temp), 0);
-				printf("bytes sent %d\n", res);
+	// Listen for request on socket
+		wsResult = listen(ListenSocket, SOMAXCONN);
+		// Test to see if socket is listening
+		if (wsResult == SOCKET_ERROR)
+		{
+			printf("Listen error: %ld\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return 1;
+		}
 
-				
+		// Accept a client socket
+		ClientSocket = accept(ListenSocket, NULL, NULL);
+		//Test to see if accept worked
+		if (ClientSocket == INVALID_SOCKET)
+		{
+			printf("accept socket error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return 1;
+		}
+		else
+		{
+			// this can be commented out
+			printf("Listening on %s:%s\n", IPADDR, port);
+		}
+
+		//store the request from client
+		if (checkVersion > 4)
+		{
+			checkVersion = 0;
+			localVersion = getLocalVersion();
+		}
+
+		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
+		if (req > 0)
+		{
+			printf("bytes received: %d\n", req);
+			printf("message received: %d\n", temp);
+			printf("temp received %d\n", temp);
+
+			if (temp == 1)
+			{
+				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
-			else {
-				printf("versions match\n");
-				res = send(ClientSocket, buffer, req, 0);
+
+			else if(temp == 2)
+			{
+				//Send over the file
+				ifstream inputFile;
+				openInputFile(inputFile, FILENAME);
+
+				res = send(ClientSocket, (char *)readInt(inputFile), sizeof(inputFile), 0);
+				inputFile.close();
+				//res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
-			// echo the buffer back through response
-			// instead of echo buffer we need to echo data.bin for client
-			res = send(ClientSocket, buffer, req, 0);
-			if (res == SOCKET_ERROR) {
+			//if sends failed send error
+			if (res == SOCKET_ERROR)
+			{
 				printf("failed to send: %d\n", WSAGetLastError());
 				closesocket(ClientSocket);
 				WSACleanup();
 				return 1;
 			}
-			
 		}
-	} while (req > 0);
+		// Shouldn't happen
+		else if (req == 0)
+		{
+			int size = getFileSize();
+			int *file = new int[size];
+			getFile(file, size);
+			for (int i = 0; i < size; i++)
+			{
+				printf("%d\n", file[i]);
+			}
+			delete file;
+		}
+
+		requestsHandled++;
+		printf("Requests handled:\d\n", requestsHandled);
+	} while (req != -1);
 
 	//This wont run unless we create a shutdown signal
 	//cleaning
