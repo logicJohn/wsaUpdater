@@ -124,19 +124,20 @@ int main()
 
 	//check req socket to see if connection was made
 	if (ReqSocket == INVALID_SOCKET) {
-		printf("Unable to connect host:port \n");
+		printf("Unable to connect to host:port\n %s:%s \n", IPADDR,port);
 		WSACleanup();
 		return 1;
 	}
 
 	// set buffer length as well as req and res
-	char buffer[BUFFER_LENGTH] = "hello World\n";
-	snprintf(buffer, sizeof(buffer), "%d", localVersion);
+	char buffer[BUFFER_LENGTH] = "";
 	int req, res;
-
-
+	int temp;
+	
+	
 	// This sends the buffer, but the third paramater must equal the length of the buffer msg
 	req = send(ReqSocket, (char *)&requestVersion, sizeof(requestVersion), 0);
+  
 	// Test to see if request was successful
 	if (req == SOCKET_ERROR)
 	{
@@ -148,6 +149,7 @@ int main()
 	// if req was sent print amount sent
 	printf("Bytes Sent: %d\n", req);
 	printf("Message Sent(int): %d\n", localVersion);
+
 
 	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
 	if (temp == localVersion)
@@ -175,15 +177,32 @@ int main()
 		openOutputFile(outputFile, FILENAME);
 
 		writeInt(outputFile, res);
-		outputFile.close();
+		outputFile.close();	
+    //--------------------------------------------------------------------------------------------------
+    // I didn't validate that this section would work with what I have,
+    // but I see no reason why it wouldn't. If there's issues, I'd start here. 
+	  // Shutdown req Connection
+	  // the client can still use socket for receiving
+	  wsResult = shutdown(ReqSocket, SD_SEND);
+	  // test to see if reqsocket shutdown
+	  if (wsResult == SOCKET_ERROR) {
+		printf("shutdown error: %d\n", WSAGetLastError());
+		closesocket(ReqSocket);
+		WSACleanup();
+		return 1;
+    //--------------------------------------------------------------------------------------------------
 	}
+	
 
 	/*The client should close after it sees it had the current version or it recieves the new version and it prints the version it has. 
 	//Reveive data until the server ends connection
 	do {
 		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
+
 		if (res > 0) {
 			printf("Bytes reveived: %d\n", res);
+			printf("Message received: %.*s\n", strlen(buffer), buffer);
+			
 		}
 		else if (res == 0) {
 			printf("connection closed\n");

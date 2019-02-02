@@ -6,7 +6,7 @@ using namespace std;
 
 #pragma comment(lib, "Ws2_32.lib")
 
-const char FILENAME[] = "data.bin";
+const char FILENAME[] = "data3.bin";
 const char IPADDR[] = "127.0.0.1";
 const int  PORT = 50000;
 const int  QUERY = 1;
@@ -19,7 +19,10 @@ int requestsHandled = 0;
 int getLocalVersion();
 
 // Return the contents of data.bin
-int getFile(char* charArray);
+void getFile(int file[], int size);
+
+// return the number of ints in data.bin
+int getFileSize();
 
 int main()
 {
@@ -30,8 +33,8 @@ int main()
 	SOCKET ClientSocket = INVALID_SOCKET;
 	
 	char port[10];
-	
 	snprintf(port, sizeof(port), "%d", PORT);
+
 	int localVersion = getLocalVersion();
 	printf("Current data file version: v%d\n", localVersion);
 	printf("Running on port number %d\n\n", PORT);
@@ -109,8 +112,10 @@ int main()
 	
 	// receive data until shutdown
 	// buffer length of bytes
-	char buffer[BUFFER_LENGTH];
-	int req, res; // request, response
+	char buffer[BUFFER_LENGTH] = "\n";
+	int req = 0, res; // request, response
+	int checkVersion = 0; // When this is 4 the server should set this to 0 and check the local version number 
+	int temp;
 
 	// Listen for request on socket
 		wsResult = listen(ListenSocket, SOMAXCONN);
@@ -153,6 +158,7 @@ int main()
 			printf("message received: %d\n", temp);
 			printf("temp received %d\n", temp);
 
+
 			if (temp == 1)
 			{
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
@@ -177,6 +183,7 @@ int main()
 				return 1;
 			}
 		}
+
 		// Shouldn't happen
 		else if (req == 0)
 		{
@@ -201,8 +208,7 @@ int main()
 	return 0;
 }
 
-int getLocalVersion()
-{
+int getLocalVersion() {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
 
@@ -212,21 +218,29 @@ int getLocalVersion()
 	return version;
 }
 
-int getFile(char* charArray) {
+void getFile(int file[], int size) {
+	ifstream dataFile;
+	openInputFile(dataFile, FILENAME);
+	
+	for (int i = 0; i < size; i++) {
+		file[i] = readInt(dataFile);
+	}
+	dataFile.close();
 
+
+}
+
+int getFileSize() {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
 
-	char buffer[BUFFER_LENGTH];
-	char newVersion[] = "";
-	int num;
-
+	int counter = 0;
+	int temp;
 	do {
-		num = readInt(dataFile);
-		snprintf(buffer, 20, "%d", num);
-		strcat_s(newVersion, buffer);
-	} while (num != EOF);
+		temp = readInt(dataFile);
+	} while (temp != EOF);
 
-	charArray = newVersion;
-	return strlen(charArray);
-}
+	dataFile.close();
+
+	return counter;
+
