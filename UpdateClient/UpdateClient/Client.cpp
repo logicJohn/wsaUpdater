@@ -122,19 +122,19 @@ int main()
 
 	//check req socket to see if connection was made
 	if (ReqSocket == INVALID_SOCKET) {
-		printf("Unable to connect host:port \n");
+		printf("Unable to connect to host:port\n %s:%s \n", IPADDR,port);
 		WSACleanup();
 		return 1;
 	}
 
 	// set buffer length as well as req and res
-	char buffer[BUFFER_LENGTH] = "\n";
-	snprintf(buffer, sizeof(buffer), "%d", localVersion);
+	char buffer[BUFFER_LENGTH] = "";
 	int req, res;
-
-
+	int temp;
+	
+	
 	// This sends the buffer, but the third paramater must equal the length of the buffer msg
-	req = send(ReqSocket, buffer, strlen(buffer), 0);
+	req = send(ReqSocket, (char *)&localVersion, sizeof(localVersion), 0);
 	// Test to see if request was successful
 	if (req == SOCKET_ERROR) {
 		printf("send error: %d\n", WSAGetLastError());
@@ -143,9 +143,49 @@ int main()
 		return 1;
 	}
 	// if req was sent print amount sent
-	printf("Bytes Sent: %ld\n", req);
+	printf("Bytes Sent: %d\n", req);
+	printf("Message Sent(int): %d\n", localVersion);
+	
 
+	res = recv(ReqSocket, (char*)&temp, sizeof(temp), 0);
+	if (res > 0) {
+		printf("Bytes received: %d\n", res);
+		printf("stat code received: %d\n", temp);
+	}
+	else {
+		printf("No response from server\n");
+	}
+	
+	
+	if (temp == 200) {
+		printf("versions are the same\n");
+	}
+	else {
+		printf("version are not the same\n");
+		
+		temp = 0;
+		req = send(ReqSocket, (char*)&temp, sizeof(temp), 0);
+		/*
+		do {
+			res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
 
+			if (res > 0) {
+				printf("Bytes reveived: %d\n", res);
+				printf("Message received: %.*s\n", strlen(buffer), buffer);
+
+			}
+			else if (res == 0) {
+				printf("connection closed\n");
+			}
+			else {
+				printf("res/recv error %d\n", WSAGetLastError());
+			}
+		} while (res > 0);
+		*/
+	}
+
+	
+	
 	// Shutdown req Connection
 	// the client can still use socket for receiving
 	wsResult = shutdown(ReqSocket, SD_SEND);
@@ -156,6 +196,7 @@ int main()
 		WSACleanup();
 		return 1;
 	}
+	
 
 	//Reveive data until the server ends connection
 	do {

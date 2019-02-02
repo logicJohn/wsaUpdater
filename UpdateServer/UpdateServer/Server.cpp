@@ -6,7 +6,7 @@ using namespace std;
 
 #pragma comment(lib, "Ws2_32.lib")
 
-const char FILENAME[] = "data.bin";
+const char FILENAME[] = "data3.bin";
 const char IPADDR[] = "127.0.0.1";
 const int  PORT = 50000;
 const int  QUERY = 1;
@@ -18,7 +18,10 @@ const int  BUFFER_LENGTH = 512;
 int getLocalVersion();
 
 // Return the contents of data.bin
-int getFile(char* charArray);
+void getFile(int file[], int size);
+
+// return the number of ints in data.bin
+int getFileSize();
 
 int main()
 {
@@ -29,8 +32,8 @@ int main()
 	SOCKET ClientSocket = INVALID_SOCKET;
 	
 	char port[10];
-	
 	snprintf(port, sizeof(port), "%d", PORT);
+
 	int localVersion = getLocalVersion();
 	printf("local version %d\n", localVersion);
 
@@ -132,44 +135,58 @@ int main()
 
 	// receive data until shutdown
 	// buffer length of bytes
-	char buffer[BUFFER_LENGTH];
-	int req, res; // request, response
+	char buffer[BUFFER_LENGTH] = "\n";
+	int req = 0, res; // request, response
+	int checkVersion = 0; // When this is 4 the server should set this to 0 and check the local version number 
+	int temp;
 
 	do {
 		//store the request from client
+		if (checkVersion > 4) {
+			checkVersion = 0;
+			localVersion = getLocalVersion();
+		}
 		
-		req = recv(ClientSocket, buffer, BUFFER_LENGTH, 0);
+
+		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
 		if (req > 0) {
 			printf("bytes received: %d\n", req);
-			printf("buffer received: %.*s\n", req, buffer);
-			if (getLocalVersion() != 56) { // This line needs to be adjusted to compare the char [] that we get from req and the int from getLocalVersion
-				printf("version are different\n");
-				char temp[BUFFER_LENGTH] = "505\n";
-				//int tempLength = getFile(temp);
-				printf("String sent to send: %.*s\n", strlen(temp),temp);
-				res = send(ClientSocket, temp, strlen(temp), 0);
-				printf("bytes sent %d\n", res);
+			printf("message received: %d\n", temp);
+			printf("temp received %d\n", temp);
 
+			if (temp != localVersion) {
+				int statCode = 505;
+				res = send(ClientSocket, (char *)&statCode, sizeof(statCode), 0);
+				printf("sent stat code %d\n", statCode);
 			}
 			else {
-				printf("versions match\n");
-				char temp[10] = "200\n";
-				printf("String sent to send %.*s\n", strlen(temp), temp);
-				res = send(ClientSocket, temp, strlen(temp), 0);
-				printf("bytes sent %d\n", res);
+				int statCode = 200;
+				res = send(ClientSocket, (char *)&statCode, sizeof(statCode), 0);
+				printf("sent stat code %d\n", statCode);
+				req = -1;
 			}
-			// echo the buffer back through response
-			// instead of echo buffer we need to echo data.bin for client
-			//res = send(ClientSocket, buffer, req, 0);
+			//if sends failed send error 
 			if (res == SOCKET_ERROR) {
 				printf("failed to send: %d\n", WSAGetLastError());
 				closesocket(ClientSocket);
 				WSACleanup();
 				return 1;
 			}
-			
 		}
-	} while (req > 0);
+		else if (req == 0) {
+			int size = getFileSize();
+			int* file= new int[size];
+			getFile(file, size);
+			for (int i = 0; i < size; i++) {
+				printf("%d\n", file[i]);
+			}
+			delete file;
+
+		}
+		
+
+		checkVersion++;
+	} while (req != -1);
 
 	//This wont run unless we create a shutdown signal
 	//cleaning
@@ -178,8 +195,7 @@ int main()
 	return 0;
 }
 
-int getLocalVersion()
-{
+int getLocalVersion() {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
 
@@ -189,21 +205,29 @@ int getLocalVersion()
 	return version;
 }
 
-int getFile(char* charArray) {
+void getFile(int file[], int size) {
+	ifstream dataFile;
+	openInputFile(dataFile, FILENAME);
+	
+	for (int i = 0; i < size; i++) {
+		file[i] = readInt(dataFile);
+	}
+	dataFile.close();
 
+
+}
+
+int getFileSize() {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
 
-	char buffer[BUFFER_LENGTH];
-	char newVersion[] = "";
-	int num;
-
+	int counter = 0;
+	int temp;
 	do {
-		num = readInt(dataFile);
-		snprintf(buffer, 20, "%d", num);
-		strcat_s(newVersion, buffer);
-	} while (num != EOF);
+		temp = readInt(dataFile);
+	} while (temp != EOF);
 
-	charArray = newVersion;
-	return strlen(charArray);
+	dataFile.close();
+
+	return counter;
 }
