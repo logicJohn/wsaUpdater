@@ -13,6 +13,8 @@ const int  PORT = 50000;
 const int  QUERY = 1;
 const int  UPDATE = 2;
 const int  BUFFER_LENGTH = 512;	
+const int requestVersion = 1;
+const int requestFile = 2;
 
 // Returns the version number from the data file
 int getLocalVersion();
@@ -134,29 +136,49 @@ int main()
 
 
 	// This sends the buffer, but the third paramater must equal the length of the buffer msg
-	req = send(ReqSocket, buffer, strlen(buffer), 0);
+	req = send(ReqSocket, (char *)&requestVersion, sizeof(requestVersion), 0);
 	// Test to see if request was successful
-	if (req == SOCKET_ERROR) {
+	if (req == SOCKET_ERROR)
+	{
 		printf("send error: %d\n", WSAGetLastError());
 		closesocket(ReqSocket);
 		WSACleanup();
 		return 1;
 	}
 	// if req was sent print amount sent
-	printf("Bytes Sent: %ld\n", req);
+	printf("Bytes Sent: %d\n", req);
+	printf("Message Sent(int): %d\n", localVersion);
 
+	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
+	if (temp == localVersion)
+	{
+		printf("versions are the same\n");
+	}
+	else
+	{
+		printf("version are not the same\n");
 
-	// Shutdown req Connection
-	// the client can still use socket for receiving
-	wsResult = shutdown(ReqSocket, SD_SEND);
-	// test to see if reqsocket shutdown
-	if (wsResult == SOCKET_ERROR) {
-		printf("shutdown error: %d\n", WSAGetLastError());
-		closesocket(ReqSocket);
-		WSACleanup();
-		return 1;
+		temp = 0;
+		req = send(ReqSocket, (char *)&requestFile, sizeof(2), 0);
+
+		if (req == SOCKET_ERROR)
+		{
+			printf("send error: %d\n", WSAGetLastError());
+			closesocket(ReqSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
+
+		ofstream outputFile;
+		openOutputFile(outputFile, FILENAME);
+
+		writeInt(outputFile, res);
+		outputFile.close();
 	}
 
+	/*The client should close after it sees it had the current version or it recieves the new version and it prints the version it has. 
 	//Reveive data until the server ends connection
 	do {
 		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
@@ -170,6 +192,8 @@ int main()
 			printf("res/recv error %d\n", WSAGetLastError());
 		}
 	} while (res > 0);
+	
+	*/
 
 
 	//read - print data to client
