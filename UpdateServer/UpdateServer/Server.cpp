@@ -12,6 +12,7 @@ const int  PORT = 50000;
 const int  QUERY = 1;
 const int  UPDATE = 2;
 const int  BUFFER_LENGTH = 512;
+int requestsHandled = 0;
 
 // Returns the version number from the data file
 // Writen by Bobby Hoggard :)
@@ -26,7 +27,7 @@ int getFileSize();
 int main()
 {
 	// Add your code here for the server
-	
+	cout << "Update server\n";
 	// Declare sockets for listening and server, initialize to invalid
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
@@ -35,7 +36,8 @@ int main()
 	snprintf(port, sizeof(port), "%d", PORT);
 
 	int localVersion = getLocalVersion();
-	printf("local version %d\n", localVersion);
+	printf("Current data file version: v%d\n", localVersion);
+	printf("Running on port number %d\n\n", PORT);
 
 	//Create Windows Socket data object
 	
@@ -107,32 +109,7 @@ int main()
 		//free's the result section
 		freeaddrinfo(result);
 	}
-
-	// Listen for request on socket
-	wsResult = listen(ListenSocket, SOMAXCONN);
-	// Test to see if socket is listening
-	if (wsResult == SOCKET_ERROR) {
-		printf("Listen error: %ld\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
-
-
-	// Accept a client socket
-	ClientSocket = accept(ListenSocket, NULL, NULL);
-	//Test to see if accept worked
-	if (ClientSocket == INVALID_SOCKET) {
-		printf("accept socket error: %d\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
-	else {
-		// this can be commented out
-		printf("Listening on %s:%s\n", IPADDR, port);
-	}
-
+	
 	// receive data until shutdown
 	// buffer length of bytes
 	char buffer[BUFFER_LENGTH] = "\n";
@@ -140,52 +117,88 @@ int main()
 	int checkVersion = 0; // When this is 4 the server should set this to 0 and check the local version number 
 	int temp;
 
-	do {
+	// Listen for request on socket
+		wsResult = listen(ListenSocket, SOMAXCONN);
+		// Test to see if socket is listening
+		if (wsResult == SOCKET_ERROR)
+		{
+			printf("Listen error: %ld\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		// Accept a client socket
+		ClientSocket = accept(ListenSocket, NULL, NULL);
+		//Test to see if accept worked
+		if (ClientSocket == INVALID_SOCKET)
+		{
+			printf("accept socket error: %d\n", WSAGetLastError());
+			closesocket(ListenSocket);
+			WSACleanup();
+			return 1;
+		}
+		else
+		{
+			// this can be commented out
+			printf("Listening on %s:%s\n", IPADDR, port);
+		}
+
 		//store the request from client
-		if (checkVersion > 4) {
+		if (checkVersion > 4)
+		{
 			checkVersion = 0;
 			localVersion = getLocalVersion();
 		}
-		
 
 		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
-		if (req > 0) {
+		if (req > 0)
+		{
 			printf("bytes received: %d\n", req);
 			printf("message received: %d\n", temp);
 			printf("temp received %d\n", temp);
 
-			if (temp != localVersion) {
-				int statCode = 505;
-				res = send(ClientSocket, (char *)&statCode, sizeof(statCode), 0);
-				printf("sent stat code %d\n", statCode);
+
+			if (temp == 1)
+			{
+				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
-			else {
-				int statCode = 200;
-				res = send(ClientSocket, (char *)&statCode, sizeof(statCode), 0);
-				printf("sent stat code %d\n", statCode);
-				req = -1;
+
+			else if(temp == 2)
+			{
+				//Send over the file
+				ifstream inputFile;
+				openInputFile(inputFile, FILENAME);
+
+				res = send(ClientSocket, (char *)readInt(inputFile), sizeof(inputFile), 0);
+				inputFile.close();
+				//res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
-			//if sends failed send error 
-			if (res == SOCKET_ERROR) {
+			//if sends failed send error
+			if (res == SOCKET_ERROR)
+			{
 				printf("failed to send: %d\n", WSAGetLastError());
 				closesocket(ClientSocket);
 				WSACleanup();
 				return 1;
 			}
 		}
-		else if (req == 0) {
+
+		// Shouldn't happen
+		else if (req == 0)
+		{
 			int size = getFileSize();
-			int* file= new int[size];
+			int *file = new int[size];
 			getFile(file, size);
-			for (int i = 0; i < size; i++) {
+			for (int i = 0; i < size; i++)
+			{
 				printf("%d\n", file[i]);
 			}
 			delete file;
-
 		}
-		
 
-		checkVersion++;
+		requestsHandled++;
+		printf("Requests handled:\d\n", requestsHandled);
 	} while (req != -1);
 
 	//This wont run unless we create a shutdown signal
@@ -230,4 +243,4 @@ int getFileSize() {
 	dataFile.close();
 
 	return counter;
-}
+

@@ -13,6 +13,8 @@ const int  PORT = 50000;
 const int  QUERY = 1;
 const int  UPDATE = 2;
 const int  BUFFER_LENGTH = 512;	
+const int requestVersion = 1;
+const int requestFile = 2;
 
 // Returns the version number from the data file
 int getLocalVersion();
@@ -134,9 +136,11 @@ int main()
 	
 	
 	// This sends the buffer, but the third paramater must equal the length of the buffer msg
-	req = send(ReqSocket, (char *)&localVersion, sizeof(localVersion), 0);
+	req = send(ReqSocket, (char *)&requestVersion, sizeof(requestVersion), 0);
+  
 	// Test to see if request was successful
-	if (req == SOCKET_ERROR) {
+	if (req == SOCKET_ERROR)
+	{
 		printf("send error: %d\n", WSAGetLastError());
 		closesocket(ReqSocket);
 		WSACleanup();
@@ -145,59 +149,52 @@ int main()
 	// if req was sent print amount sent
 	printf("Bytes Sent: %d\n", req);
 	printf("Message Sent(int): %d\n", localVersion);
-	
 
-	res = recv(ReqSocket, (char*)&temp, sizeof(temp), 0);
-	if (res > 0) {
-		printf("Bytes received: %d\n", res);
-		printf("stat code received: %d\n", temp);
-	}
-	else {
-		printf("No response from server\n");
-	}
-	
-	
-	if (temp == 200) {
+
+	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
+	if (temp == localVersion)
+	{
 		printf("versions are the same\n");
 	}
-	else {
+	else
+	{
 		printf("version are not the same\n");
-		
+
 		temp = 0;
-		req = send(ReqSocket, (char*)&temp, sizeof(temp), 0);
-		/*
-		do {
-			res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
+		req = send(ReqSocket, (char *)&requestFile, sizeof(2), 0);
 
-			if (res > 0) {
-				printf("Bytes reveived: %d\n", res);
-				printf("Message received: %.*s\n", strlen(buffer), buffer);
+		if (req == SOCKET_ERROR)
+		{
+			printf("send error: %d\n", WSAGetLastError());
+			closesocket(ReqSocket);
+			WSACleanup();
+			return 1;
+		}
 
-			}
-			else if (res == 0) {
-				printf("connection closed\n");
-			}
-			else {
-				printf("res/recv error %d\n", WSAGetLastError());
-			}
-		} while (res > 0);
-		*/
-	}
+		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
 
-	
-	
-	// Shutdown req Connection
-	// the client can still use socket for receiving
-	wsResult = shutdown(ReqSocket, SD_SEND);
-	// test to see if reqsocket shutdown
-	if (wsResult == SOCKET_ERROR) {
+		ofstream outputFile;
+		openOutputFile(outputFile, FILENAME);
+
+		writeInt(outputFile, res);
+		outputFile.close();	
+    //--------------------------------------------------------------------------------------------------
+    // I didn't validate that this section would work with what I have,
+    // but I see no reason why it wouldn't. If there's issues, I'd start here. 
+	  // Shutdown req Connection
+	  // the client can still use socket for receiving
+	  wsResult = shutdown(ReqSocket, SD_SEND);
+	  // test to see if reqsocket shutdown
+	  if (wsResult == SOCKET_ERROR) {
 		printf("shutdown error: %d\n", WSAGetLastError());
 		closesocket(ReqSocket);
 		WSACleanup();
 		return 1;
+    //--------------------------------------------------------------------------------------------------
 	}
 	
 
+	/*The client should close after it sees it had the current version or it recieves the new version and it prints the version it has. 
 	//Reveive data until the server ends connection
 	do {
 		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
@@ -214,6 +211,8 @@ int main()
 			printf("res/recv error %d\n", WSAGetLastError());
 		}
 	} while (res > 0);
+	
+	*/
 
 
 	//read - print data to client
