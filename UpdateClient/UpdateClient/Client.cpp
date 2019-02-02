@@ -192,7 +192,7 @@ int main() {
 		return 1;
 		//--------------------------------------------------------------------------------------------------
 	}
-
+	
 	/*
 	//The client should close after it sees it had the current version or it recieves the new version and it prints the version it has.
 	//Reveive data until the server ends connection

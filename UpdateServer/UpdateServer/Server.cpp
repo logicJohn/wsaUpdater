@@ -151,11 +151,12 @@ int main() {
 
 			else if(temp == 2)
 			{
-				int num1, num2;
+				int num1, num2, shutdown = -1;
 				readData(num1, num2);
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 				res = send(ClientSocket, (char *)&num1, sizeof(num1), 0);
 				res = send(ClientSocket, (char *)&num2, sizeof(num2), 0);
+				res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
 
 			}
 			//if sends failed send error
