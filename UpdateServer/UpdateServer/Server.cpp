@@ -138,9 +138,8 @@ int main() {
 		WSACleanup();
 		return 1;
 	}
-
-
 	do {
+
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		//Test to see if accept worked
@@ -151,12 +150,11 @@ int main() {
 			return 1;
 		}
 
+
 		cout << "Connection received\n\n";
 
 		printf("Current data file version: v%d\n", localVersion);
 		printf("Running on port number %d\n\n", PORT);
-
-
 
 		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
 		if (req > 0) {
@@ -174,9 +172,11 @@ int main() {
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
 
+
 			else if (temp == 2)
 			{
 				int num1, num2;
+
 				readData(num1, num2);
 				//num1 = 2;
 				//num2 = 42;
@@ -219,6 +219,7 @@ int main() {
 
 				res = send(ClientSocket, (char *)&num2, sizeof(num2), 0);
 
+
 				if (res == SOCKET_ERROR) {
 					printf("failed to send3: %d\n", WSAGetLastError());
 					closesocket(ClientSocket);
@@ -227,6 +228,7 @@ int main() {
 				}
 				
 				//res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
+
 
 			}
 			//if sends failed send error
@@ -238,6 +240,7 @@ int main() {
 			}
 		}
 
+
 		shutdown(ClientSocket, 0);
 		closesocket(ClientSocket);
 
@@ -246,7 +249,6 @@ int main() {
 		if (requestsHandled % 5 == 0) {
 			localVersion = getLocalVersion();
 		}
-
 		cout << "\nWaiting for connections...\n";
 
 	} while (req != 0);

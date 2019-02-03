@@ -154,6 +154,7 @@ int main() {
 		printf("versions are the same\n");
 	}
 	else {
+
 		// Window Socket Cleaning
 		closesocket(ReqSocket);
 		WSACleanup();
@@ -192,7 +193,7 @@ int main() {
 
 		//Attemp to connect to host:port
 		ptr = result;
-		
+
 		// Create a socket for connecting to server
 		ReqSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
@@ -225,6 +226,7 @@ int main() {
 		printf("version are not the same\n");
 
 		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile) + 1, 0);
+
 		// printf("Bytes Sent: %d\n", req);
 		// printf("Message Sent(int): %d\n", requestFile);
 		if (req == SOCKET_ERROR) {
@@ -239,7 +241,18 @@ int main() {
 		for (int counter = 0; counter != 3; counter++) {
 			res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
 			writeInt(dataFile, temp);
+
 		}
+		//do {
+		//	printf("In do-while");
+		//	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
+		//	if (res != -1) {
+		//		writeInt(dataFile, temp);
+		//	}
+		//	printf("recieved bytes %d\n", res);
+		//	printf("recieved value %d\n", temp);
+			
+		//} while (res != -1);
 		dataFile.close();
 	}
 	
@@ -248,7 +261,7 @@ int main() {
 	// Shutdown req Connection
 	// the client can still use socket for receiving
 	wsResult = shutdown(ReqSocket, SD_SEND);
-	
+
 
 
 
