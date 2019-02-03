@@ -124,20 +124,23 @@ int main() {
 		WSACleanup();
 		return 1;
 	}
+
 	do {
-	//do {
+
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		//Test to see if accept worked
-
 		if (ClientSocket == INVALID_SOCKET) {
 			printf("accept socket error: %d\n", WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
 			return 1;
 		}
+
 		printf("Current data file version: v%d\n", localVersion);
 		printf("Running on port number %d\n\n", PORT);
+		
+
 		
 		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
 		if (req > 0) {
@@ -150,18 +153,15 @@ int main() {
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
 
-			
-
 			else if(temp == 2)
 			{
 				int num1, num2, shutdown = -1;
+				int three = 3;
 				readData(num1, num2);
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 				res = send(ClientSocket, (char *)&num1, sizeof(num1), 0);
 				res = send(ClientSocket, (char *)&num2, sizeof(num2), 0);
-
-				//res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
-
+				// res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
 
 			}
 			//if sends failed send error
@@ -172,12 +172,13 @@ int main() {
 				return 1;
 			}
 		}
+
 		requestsHandled++;
 		printf("Requests handled:%d\n", requestsHandled);
 		if (requestsHandled % 5 == 0) {
 			printf("IN THE LOOP\n");
 			localVersion = getLocalVersion();
-		
+		}
 	} while (req != 0);
 
 	return 0;
