@@ -29,3 +29,9 @@ When server receives a message to send a file it needs to send the file array
 Client needs to listen for file arr, update local file, do math, then shut down
 
 for now shuting down the server after shuting down client is fine.  We can adjust that at the end.
+
+## ISSUE
+
+When our server communicates with Hoggard's client, Hoggard's client receives incorrect numbers. It reads the version number correctly. 
+
+The issue has to be with how we are sending our data. I'm not sure how Hoggard wants it and it is especially confusing because Hoggard's server works with our client. Meaning, his server is sending 3 different values that correspond with the 3 numbers in the file. Because of this, his server works with our client. 
