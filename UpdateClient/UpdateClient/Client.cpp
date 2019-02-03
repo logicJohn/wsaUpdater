@@ -24,11 +24,10 @@ int getLocalVersion();
 // two values that were read from the file.
 void readData(int& num1, int& num2);
 
-int main()
-{
+int main() {
 	int			sum;
 	int			num1 = 0;
-	int			num2 = 0;	
+	int			num2 = 0;
 	int			localVersion = 0;
 
 	// Add code here to
@@ -40,7 +39,7 @@ int main()
 	cout << "\nSum Calculator Version " << localVersion << "\n\n";
 
 	//networking starts here
-	
+
 	//initialize Window Socket start
 	WSADATA wsaData;
 
@@ -67,7 +66,7 @@ int main()
 
 	//socket for sending request 
 	SOCKET ReqSocket = INVALID_SOCKET;
-	
+
 
 	// Start Window Socket
 	wsResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -79,15 +78,15 @@ int main()
 
 	// addrinfo is a socket address structure used by get address info (getaddrinfo)
 	struct addrinfo *result = NULL,
-					*ptr = NULL,
-					hints;
+		*ptr = NULL,
+		hints;
 
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_INET; //Value 2 , indicates IPv4 family
 	hints.ai_socktype = SOCK_STREAM; //Value 1 , indicates 2 way TCP/IP
 	hints.ai_protocol = IPPROTO_TCP; //Value 6 , indicates  TCP
 	// ^^ socktype and protocol may be auto set when family is set to ipv4... not sure
-	
+
 	// Resolve the req address and port (create socket)
 	wsResult = getaddrinfo(IPADDR, port, &hints, &result);
 	// test if socket is resolved
@@ -96,11 +95,11 @@ int main()
 		WSACleanup();
 		return 1;
 	}
-	
+
 	//Attemp to connect to host:port
 	ptr = result;
 
-	// Create a socket for connectiong to server
+	// Create a socket for connecting to server
 	ReqSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 
 	//check to see if the socket is valid
@@ -124,7 +123,7 @@ int main()
 
 	//check req socket to see if connection was made
 	if (ReqSocket == INVALID_SOCKET) {
-		printf("Unable to connect to host:port\n %s:%s \n", IPADDR,port);
+		printf("Unable to connect to host:port\n %s:%s \n", IPADDR, port);
 		WSACleanup();
 		return 1;
 	}
@@ -133,14 +132,11 @@ int main()
 	char buffer[BUFFER_LENGTH] = "";
 	int req, res;
 	int temp;
-	
-	
+
+
 	// This sends the buffer, but the third paramater must equal the length of the buffer msg
 	req = send(ReqSocket, (char *)&requestVersion, sizeof(requestVersion), 0);
-  
-	// Test to see if request was successful
-	if (req == SOCKET_ERROR)
-	{
+	if (req == SOCKET_ERROR) {
 		printf("send error: %d\n", WSAGetLastError());
 		closesocket(ReqSocket);
 		WSACleanup();
@@ -148,75 +144,68 @@ int main()
 	}
 	// if req was sent print amount sent
 	printf("Bytes Sent: %d\n", req);
-	printf("Message Sent(int): %d\n", localVersion);
+	printf("Message Sent(int): %d\n", requestVersion);
 
 
 	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
-	if (temp == localVersion)
-	{
+	printf("Received Version: Server %d\n", temp);
+	if (temp == localVersion) {
 		printf("versions are the same\n");
 	}
-	else
-	{
+	else {
 		printf("version are not the same\n");
 
-		temp = 0;
-		req = send(ReqSocket, (char *)&requestFile, sizeof(2), 0);
-
-		if (req == SOCKET_ERROR)
-		{
+		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile) + 1, 0);
+		printf("Bytes Sent: %d\n", req);
+		printf("Message Sent(int): %d\n", requestFile);
+		if (req == SOCKET_ERROR) {
 			printf("send error: %d\n", WSAGetLastError());
 			closesocket(ReqSocket);
 			WSACleanup();
 			return 1;
 		}
+		ofstream dataFile;
+		openOutputFile(dataFile, FILENAME);
 
-		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
-
-		ofstream outputFile;
-		openOutputFile(outputFile, FILENAME);
-
-		writeInt(outputFile, res);
-		outputFile.close();	
-    //--------------------------------------------------------------------------------------------------
-    // I didn't validate that this section would work with what I have,
-    // but I see no reason why it wouldn't. If there's issues, I'd start here. 
-	  // Shutdown req Connection
-	  // the client can still use socket for receiving
-	  wsResult = shutdown(ReqSocket, SD_SEND);
-	  // test to see if reqsocket shutdown
-	  if (wsResult == SOCKET_ERROR) {
+		for (int counter = 0; counter != 3; counter++) {
+			printf("In for-loop");
+			res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
+			printf("After res");
+			writeInt(dataFile, temp);
+			printf("recieved bytes %d\n", res);
+			printf("recieved value %d\n", temp);
+		}
+		//do {
+		//	printf("In do-while");
+		//	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
+		//	if (res != -1) {
+		//		writeInt(dataFile, temp);
+		//	}
+		//	printf("recieved bytes %d\n", res);
+		//	printf("recieved value %d\n", temp);
+			
+		//} while (res != -1);
+		dataFile.close();
+	}
+	
+	
+		
+	// Shutdown req Connection
+	// the client can still use socket for receiving
+	wsResult = shutdown(ReqSocket, SD_SEND);
+	// test to see if reqsocket shutdown
+	if (wsResult == SOCKET_ERROR) {
 		printf("shutdown error: %d\n", WSAGetLastError());
 		closesocket(ReqSocket);
 		WSACleanup();
 		return 1;
-    //--------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------
 	}
-	
 
-	/*The client should close after it sees it had the current version or it recieves the new version and it prints the version it has. 
-	//Reveive data until the server ends connection
-	do {
-		res = recv(ReqSocket, buffer, BUFFER_LENGTH, 0);
-
-		if (res > 0) {
-			printf("Bytes reveived: %d\n", res);
-			printf("Message received: %.*s\n", strlen(buffer), buffer);
-			
-		}
-		else if (res == 0) {
-			printf("connection closed\n");
-		}
-		else {
-			printf("res/recv error %d\n", WSAGetLastError());
-		}
-	} while (res > 0);
-	
-	*/
 
 
 	//read - print data to client
-	readData(num1, num2);	
+	readData(num1, num2);
 	sum = num1 + num2;
 	cout << "The sum of " << num1 << " and " << num2 << " is " << sum << endl;
 
@@ -225,10 +214,10 @@ int main()
 	WSACleanup();
 
 	return 0;
+	
 }
 
-int getLocalVersion()
-{
+int getLocalVersion() {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
 
@@ -238,8 +227,7 @@ int getLocalVersion()
 	return version;
 }
 
-void readData(int& num1, int& num2)
-{
+void readData(int& num1, int& num2) {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
 
