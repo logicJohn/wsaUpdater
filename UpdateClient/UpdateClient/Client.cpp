@@ -143,8 +143,9 @@ int main() {
 		return 1;
 	}
 	// if req was sent print amount sent
-	printf("Bytes Sent: %d\n", req);
-	printf("Message Sent(int): %d\n", requestVersion);
+	// For debugging
+	// printf("Bytes Sent: %d\n", req);
+	// printf("Message Sent(int): %d\n", requestVersion);
 
 
 	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
@@ -225,8 +226,9 @@ int main() {
 		printf("version are not the same\n");
 
 		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile) + 1, 0);
-		printf("Bytes Sent: %d\n", req);
-		printf("Message Sent(int): %d\n", requestFile);
+
+		// printf("Bytes Sent: %d\n", req);
+		// printf("Message Sent(int): %d\n", requestFile);
 		if (req == SOCKET_ERROR) {
 			printf("send error: %d\n", WSAGetLastError());
 			closesocket(ReqSocket);
@@ -239,8 +241,7 @@ int main() {
 		for (int counter = 0; counter != 3; counter++) {
 			res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
 			writeInt(dataFile, temp);
-			//printf("recieved bytes %d\n", res);
-			//printf("recieved value %d\n", temp);
+
 		}
 		//do {
 		//	printf("In do-while");
@@ -260,14 +261,7 @@ int main() {
 	// Shutdown req Connection
 	// the client can still use socket for receiving
 	wsResult = shutdown(ReqSocket, SD_SEND);
-	// test to see if reqsocket shutdown
-	//if (wsResult == SOCKET_ERROR) {
-	//	printf("shutdown error: %d\n", WSAGetLastError());
-	//	closesocket(ReqSocket);
-	//	WSACleanup();
-	//	return 1;
-		//--------------------------------------------------------------------------------------------------
-	//}
+
 
 
 
@@ -307,3 +301,4 @@ void readData(int& num1, int& num2) {
 
 	dataFile.close();
 }
+
