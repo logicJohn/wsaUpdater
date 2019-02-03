@@ -30,14 +30,14 @@ int main() {
 	// Declare sockets for listening and server, initialize to invalid
 	SOCKET ListenSocket = INVALID_SOCKET;
 	SOCKET ClientSocket = INVALID_SOCKET;
-	
+
 	char port[10];
 	snprintf(port, sizeof(port), "%d", PORT);
 
 	int localVersion = getLocalVersion();
 
 	//Create Windows Socket data object
-	
+
 	WSADATA wsaData;
 	/*
 		*****WSADATA STUCT LAYOUT*****
@@ -52,7 +52,6 @@ int main() {
 		} WSADATA;
 	*/
 
-
 	//Start up Windows Socket 
 	// wsResult will be used to store window socket functions for testing
 	int wsResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -63,9 +62,9 @@ int main() {
 	}
 
 	//Used by getaddrinfo *get address info* 
-	struct addrinfo *result = NULL, 
-					*ptr = NULL,
-					hints;
+	struct addrinfo *result = NULL,
+		*ptr = NULL,
+		hints;
 
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_INET;  // value 2 - ipv4 family
@@ -106,13 +105,7 @@ int main() {
 		//free's the result section
 		freeaddrinfo(result);
 	}
-	
-	// receive data until shutdown
-	// buffer length of bytes
-	char buffer[BUFFER_LENGTH] = "\n";
-	int req = 0, res; // request, response
-	int checkVersion = 0; // When this is 4 the server should set this to 0 and check the local version number 
-	int temp;
+
 
 	// Listen for request on socket
 	wsResult = listen(ListenSocket, SOMAXCONN);
@@ -124,44 +117,116 @@ int main() {
 		WSACleanup();
 		return 1;
 	}
+	
+	cout << "\nWaiting for connections...\n";
+
+	// receive data until shutdown
+	// buffer length of bytes
+	char buffer[BUFFER_LENGTH] = "\n";
+	int req = 0, res; // request, response
+	int checkVersion = 0; // When this is 4 the server should set this to 0 and check the local version number 
+	int temp;
+
+
+	// Listen for request on socket
+	wsResult = listen(ListenSocket, SOMAXCONN);
+	// Test to see if socket is listening
+	if (wsResult == SOCKET_ERROR)
+	{
+		printf("Listen error: %ld\n", WSAGetLastError());
+		closesocket(ListenSocket);
+		WSACleanup();
+		return 1;
+	}
+
+
 	do {
-	//do {
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		//Test to see if accept worked
-
 		if (ClientSocket == INVALID_SOCKET) {
 			printf("accept socket error: %d\n", WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
 			return 1;
 		}
+
+		cout << "Connection received\n\n";
+
 		printf("Current data file version: v%d\n", localVersion);
 		printf("Running on port number %d\n\n", PORT);
-		
+
+
+
 		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
 		if (req > 0) {
+
+			/*
+			For debugging purposes
+
 			printf("bytes received: %d\n", req);
 			printf("message received: %d\n", temp);
 			printf("temp received %d\n", temp);
+			*/
 
 			if (temp == 1)
 			{
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
 
-			
-
-			else if(temp == 2)
+			else if (temp == 2)
 			{
-				int num1, num2, shutdown = -1;
+				int num1, num2;
 				readData(num1, num2);
+				//num1 = 2;
+				//num2 = 42;
+
+				/*
+				char fileContents[3];
+				fileContents[0] = localVersion;
+				fileContents[1] = num1;
+				fileContents[2] = num2;
+
+				res = send(ClientSocket, (char *)&fileContents, sizeof(fileContents), 0);
+				if (res == SOCKET_ERROR) {
+					printf("failed to send1: %d\n", WSAGetLastError());
+					closesocket(ClientSocket);
+					WSACleanup();
+					return 1;
+				}
+				*/
+
+				
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
+
+				if (res == SOCKET_ERROR) {
+					printf("failed to send1: %d\n", WSAGetLastError());
+					closesocket(ClientSocket);
+					WSACleanup();
+					return 1;
+				}
+
+
+				
 				res = send(ClientSocket, (char *)&num1, sizeof(num1), 0);
+
+				if (res == SOCKET_ERROR) {
+					printf("failed to send2: %d\n", WSAGetLastError());
+					closesocket(ClientSocket);
+					WSACleanup();
+					return 1;
+				}
+
 				res = send(ClientSocket, (char *)&num2, sizeof(num2), 0);
 
+				if (res == SOCKET_ERROR) {
+					printf("failed to send3: %d\n", WSAGetLastError());
+					closesocket(ClientSocket);
+					WSACleanup();
+					return 1;
+				}
+				
 				//res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
-
 
 			}
 			//if sends failed send error
@@ -172,12 +237,18 @@ int main() {
 				return 1;
 			}
 		}
+
+		shutdown(ClientSocket, 0);
+		closesocket(ClientSocket);
+
 		requestsHandled++;
 		printf("Requests handled:%d\n", requestsHandled);
 		if (requestsHandled % 5 == 0) {
-			printf("IN THE LOOP\n");
 			localVersion = getLocalVersion();
-		
+		}
+
+		cout << "\nWaiting for connections...\n";
+
 	} while (req != 0);
 
 	return 0;
