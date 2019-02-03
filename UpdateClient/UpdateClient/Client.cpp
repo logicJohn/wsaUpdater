@@ -153,9 +153,8 @@ int main() {
 		printf("versions are the same\n");
 	}
 	else {
-		printf("version are not the same\n");
-
-		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile) + 1, 0);
+		printf("version are not the same\n");	
+		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile), 0);
 		printf("Bytes Sent: %d\n", req);
 		printf("Message Sent(int): %d\n", requestFile);
 		if (req == SOCKET_ERROR) {
@@ -167,6 +166,7 @@ int main() {
 		ofstream dataFile;
 		openOutputFile(dataFile, FILENAME);
 
+
 		for (int counter = 0; counter != 3; counter++) {
 			printf("In for-loop");
 			res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
@@ -175,16 +175,6 @@ int main() {
 			printf("recieved bytes %d\n", res);
 			printf("recieved value %d\n", temp);
 		}
-		//do {
-		//	printf("In do-while");
-		//	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
-		//	if (res != -1) {
-		//		writeInt(dataFile, temp);
-		//	}
-		//	printf("recieved bytes %d\n", res);
-		//	printf("recieved value %d\n", temp);
-			
-		//} while (res != -1);
 		dataFile.close();
 	}
 	
@@ -201,9 +191,6 @@ int main() {
 		return 1;
 		//--------------------------------------------------------------------------------------------------
 	}
-
-
-
 	//read - print data to client
 	readData(num1, num2);
 	sum = num1 + num2;
