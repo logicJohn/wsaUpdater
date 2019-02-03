@@ -6,7 +6,7 @@ using namespace std;
 
 #pragma comment(lib, "Ws2_32.lib")
 
-const char FILENAME[] = "data3.bin";
+const char FILENAME[] = "data.bin";
 const char IPADDR[] = "127.0.0.1";
 const int  PORT = 50000;
 const int  QUERY = 1;
@@ -22,10 +22,9 @@ int getLocalVersion();
 void getFile(int file[], int size);
 
 // return the number of ints in data.bin
-int getFileSize();
+void readData(int& num1, int& num2);
 
-int main()
-{
+int main() {
 	// Add your code here for the server
 	cout << "Update server\n";
 	// Declare sockets for listening and server, initialize to invalid
@@ -36,8 +35,6 @@ int main()
 	snprintf(port, sizeof(port), "%d", PORT);
 
 	int localVersion = getLocalVersion();
-	printf("Current data file version: v%d\n", localVersion);
-	printf("Running on port number %d\n\n", PORT);
 
 	//Create Windows Socket data object
 	
@@ -118,65 +115,58 @@ int main()
 	int temp;
 
 	// Listen for request on socket
-		wsResult = listen(ListenSocket, SOMAXCONN);
-		// Test to see if socket is listening
-		if (wsResult == SOCKET_ERROR)
-		{
-			printf("Listen error: %ld\n", WSAGetLastError());
-			closesocket(ListenSocket);
-			WSACleanup();
-			return 1;
-		}
+	wsResult = listen(ListenSocket, SOMAXCONN);
+	// Test to see if socket is listening
+	if (wsResult == SOCKET_ERROR)
+	{
+		printf("Listen error: %ld\n", WSAGetLastError());
+		closesocket(ListenSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	do {
 
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		//Test to see if accept worked
-		if (ClientSocket == INVALID_SOCKET)
-		{
+		if (ClientSocket == INVALID_SOCKET) {
 			printf("accept socket error: %d\n", WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
 			return 1;
 		}
-		else
-		{
-			// this can be commented out
-			printf("Listening on %s:%s\n", IPADDR, port);
-		}
 
-		//store the request from client
-		if (checkVersion > 4)
-		{
-			checkVersion = 0;
-			localVersion = getLocalVersion();
-		}
+		printf("Current data file version: v%d\n", localVersion);
+		printf("Running on port number %d\n\n", PORT);
+		
 
+		
 		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
-		if (req > 0)
-		{
+		if (req > 0) {
 			printf("bytes received: %d\n", req);
 			printf("message received: %d\n", temp);
 			printf("temp received %d\n", temp);
-
 
 			if (temp == 1)
 			{
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
 
+			
+
 			else if(temp == 2)
 			{
-				//Send over the file
-				ifstream inputFile;
-				openInputFile(inputFile, FILENAME);
+				int num1, num2, shutdown = -1;
+				readData(num1, num2);
+				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
+				res = send(ClientSocket, (char *)&num1, sizeof(num1), 0);
+				res = send(ClientSocket, (char *)&num2, sizeof(num2), 0);
+				//res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
 
-				res = send(ClientSocket, (char *)readInt(inputFile), sizeof(inputFile), 0);
-				inputFile.close();
-				//res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
 			//if sends failed send error
-			if (res == SOCKET_ERROR)
-			{
+			else if (res == SOCKET_ERROR) {
 				printf("failed to send: %d\n", WSAGetLastError());
 				closesocket(ClientSocket);
 				WSACleanup();
@@ -184,27 +174,14 @@ int main()
 			}
 		}
 
-		// Shouldn't happen
-		else if (req == 0)
-		{
-			int size = getFileSize();
-			int *file = new int[size];
-			getFile(file, size);
-			for (int i = 0; i < size; i++)
-			{
-				printf("%d\n", file[i]);
-			}
-			delete file;
-		}
-
 		requestsHandled++;
-		printf("Requests handled:\d\n", requestsHandled);
-	} while (req != -1);
+		printf("Requests handled:%d\n", requestsHandled);
+		if (requestsHandled % 5 == 0) {
+			printf("IN THE LOOP\n");
+			localVersion = getLocalVersion();
+		}
+	} while (req != 0);
 
-	//This wont run unless we create a shutdown signal
-	//cleaning
-	closesocket(ClientSocket);
-	WSACleanup();
 	return 0;
 }
 
@@ -218,29 +195,17 @@ int getLocalVersion() {
 	return version;
 }
 
-void getFile(int file[], int size) {
+
+void readData(int& num1, int& num2) {
 	ifstream dataFile;
 	openInputFile(dataFile, FILENAME);
-	
-	for (int i = 0; i < size; i++) {
-		file[i] = readInt(dataFile);
-	}
+
+	// Read the version number and discard it
+	int tmp = num1 = readInt(dataFile);
+
+	// Read the two data values
+	num1 = readInt(dataFile);
+	num2 = readInt(dataFile);
+
 	dataFile.close();
-
-
 }
-
-int getFileSize() {
-	ifstream dataFile;
-	openInputFile(dataFile, FILENAME);
-
-	int counter = 0;
-	int temp;
-	do {
-		temp = readInt(dataFile);
-	} while (temp != EOF);
-
-	dataFile.close();
-
-	return counter;
-
