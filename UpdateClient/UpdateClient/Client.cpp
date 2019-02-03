@@ -153,8 +153,78 @@ int main() {
 		printf("versions are the same\n");
 	}
 	else {
-		printf("version are not the same\n");	
-		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile), 0);
+
+		// Window Socket Cleaning
+		closesocket(ReqSocket);
+		WSACleanup();
+
+		//socket for sending request 
+		SOCKET ReqSocket = INVALID_SOCKET;
+
+
+		// Start Window Socket
+		wsResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+		// Check Window Socket for errors
+		if (wsResult != 0) {
+			printf("WSAStartup error: %d\n", wsResult);
+			return 1;
+		}
+
+		// addrinfo is a socket address structure used by get address info (getaddrinfo)
+		struct addrinfo *result = NULL,
+			*ptr = NULL,
+			hints;
+
+		ZeroMemory(&hints, sizeof(hints));
+		hints.ai_family = AF_INET; //Value 2 , indicates IPv4 family
+		hints.ai_socktype = SOCK_STREAM; //Value 1 , indicates 2 way TCP/IP
+		hints.ai_protocol = IPPROTO_TCP; //Value 6 , indicates  TCP
+		// ^^ socktype and protocol may be auto set when family is set to ipv4... not sure
+
+		// Resolve the req address and port (create socket)
+		wsResult = getaddrinfo(IPADDR, port, &hints, &result);
+		// test if socket is resolved
+		if (wsResult != 0) {
+			printf("getaddrinfo error: %d\n", wsResult);
+			WSACleanup();
+			return 1;
+		}
+
+		//Attemp to connect to host:port
+		ptr = result;
+
+		// Create a socket for connecting to server
+		ReqSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+
+		//check to see if the socket is valid
+		if (ReqSocket == INVALID_SOCKET) {
+			printf("Socket error: %ld\n", WSAGetLastError());
+			freeaddrinfo(result);
+			WSACleanup();
+			return 1;
+		}
+
+		// Connect to server.
+		wsResult = connect(ReqSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+		// check to osee if the socket connected, if it failed the req must fail
+		if (wsResult == SOCKET_ERROR) {
+			closesocket(ReqSocket);
+			ReqSocket = INVALID_SOCKET;
+		}
+
+		//result is freed
+		freeaddrinfo(result);
+
+		//check req socket to see if connection was made
+		if (ReqSocket == INVALID_SOCKET) {
+			printf("Unable to connect to host:port\n %s:%s \n", IPADDR, port);
+			WSACleanup();
+			return 1;
+		}
+
+		printf("version are not the same\n");
+
+		req = send(ReqSocket, (char *)&requestFile, sizeof(requestFile) + 1, 0);
 		printf("Bytes Sent: %d\n", req);
 		printf("Message Sent(int): %d\n", requestFile);
 		if (req == SOCKET_ERROR) {
@@ -166,15 +236,22 @@ int main() {
 		ofstream dataFile;
 		openOutputFile(dataFile, FILENAME);
 
-
 		for (int counter = 0; counter != 3; counter++) {
-			printf("In for-loop");
 			res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
-			printf("After res");
 			writeInt(dataFile, temp);
-			printf("recieved bytes %d\n", res);
-			printf("recieved value %d\n", temp);
+			//printf("recieved bytes %d\n", res);
+			//printf("recieved value %d\n", temp);
 		}
+		//do {
+		//	printf("In do-while");
+		//	res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
+		//	if (res != -1) {
+		//		writeInt(dataFile, temp);
+		//	}
+		//	printf("recieved bytes %d\n", res);
+		//	printf("recieved value %d\n", temp);
+			
+		//} while (res != -1);
 		dataFile.close();
 	}
 	
@@ -184,13 +261,16 @@ int main() {
 	// the client can still use socket for receiving
 	wsResult = shutdown(ReqSocket, SD_SEND);
 	// test to see if reqsocket shutdown
-	if (wsResult == SOCKET_ERROR) {
-		printf("shutdown error: %d\n", WSAGetLastError());
-		closesocket(ReqSocket);
-		WSACleanup();
-		return 1;
+	//if (wsResult == SOCKET_ERROR) {
+	//	printf("shutdown error: %d\n", WSAGetLastError());
+	//	closesocket(ReqSocket);
+	//	WSACleanup();
+	//	return 1;
 		//--------------------------------------------------------------------------------------------------
-	}
+	//}
+
+
+
 	//read - print data to client
 	readData(num1, num2);
 	sum = num1 + num2;
