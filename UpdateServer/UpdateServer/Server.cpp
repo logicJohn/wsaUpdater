@@ -138,8 +138,9 @@ int main() {
 		WSACleanup();
 		return 1;
 	}
-	do {
 
+
+	do {
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		//Test to see if accept worked
@@ -150,11 +151,12 @@ int main() {
 			return 1;
 		}
 
-
 		cout << "Connection received\n\n";
 
 		printf("Current data file version: v%d\n", localVersion);
 		printf("Running on port number %d\n\n", PORT);
+
+
 
 		req = recv(ClientSocket, (char *)&temp, BUFFER_LENGTH, 0);
 		if (req > 0) {
@@ -172,32 +174,27 @@ int main() {
 				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
 			}
 
-
 			else if (temp == 2)
 			{
-				int num1, num2;
-
+				int num1, num2, shutdown = 1;
 				readData(num1, num2);
 				//num1 = 2;
 				//num2 = 42;
 
+				
+				int fileContents[] = { localVersion, num1, num2 };
+
+				res = send(ClientSocket, (char *)&fileContents, 12, 0);
+				if (res == SOCKET_ERROR) {
+					printf("failed to send1: %d\n", WSAGetLastError());
+					closesocket(ClientSocket);
+					WSACleanup();
+					return 1;
+				}
+				
+				
 				/*
-				char fileContents[3];
-				fileContents[0] = localVersion;
-				fileContents[1] = num1;
-				fileContents[2] = num2;
-
-				res = send(ClientSocket, (char *)&fileContents, sizeof(fileContents), 0);
-				if (res == SOCKET_ERROR) {
-					printf("failed to send1: %d\n", WSAGetLastError());
-					closesocket(ClientSocket);
-					WSACleanup();
-					return 1;
-				}
-				*/
-
-				
-				res = send(ClientSocket, (char *)&localVersion, sizeof(localVersion), 0);
+				res = send(ClientSocket, (char *)&localVersion, 4, 0);
 
 				if (res == SOCKET_ERROR) {
 					printf("failed to send1: %d\n", WSAGetLastError());
@@ -205,10 +202,8 @@ int main() {
 					WSACleanup();
 					return 1;
 				}
-
-
 				
-				res = send(ClientSocket, (char *)&num1, sizeof(num1), 0);
+				res = send(ClientSocket, (char *)&num1, 4, 0);
 
 				if (res == SOCKET_ERROR) {
 					printf("failed to send2: %d\n", WSAGetLastError());
@@ -217,8 +212,7 @@ int main() {
 					return 1;
 				}
 
-				res = send(ClientSocket, (char *)&num2, sizeof(num2), 0);
-
+				res = send(ClientSocket, (char *)&num2, 4, 0);
 
 				if (res == SOCKET_ERROR) {
 					printf("failed to send3: %d\n", WSAGetLastError());
@@ -227,9 +221,8 @@ int main() {
 					return 1;
 				}
 				
-				//res = send(ClientSocket, (char *)&shutdown, sizeof(shutdown), 0);
-
-
+				//res = send(ClientSocket, (char *)&shutdown, 4, 0);
+				*/
 			}
 			//if sends failed send error
 			else if (res == SOCKET_ERROR) {
@@ -240,15 +233,15 @@ int main() {
 			}
 		}
 
-
 		shutdown(ClientSocket, 0);
 		closesocket(ClientSocket);
-
+		temp = 0;
 		requestsHandled++;
 		printf("Requests handled:%d\n", requestsHandled);
 		if (requestsHandled % 5 == 0) {
 			localVersion = getLocalVersion();
 		}
+
 		cout << "\nWaiting for connections...\n";
 
 	} while (req != 0);
@@ -280,3 +273,5 @@ void readData(int& num1, int& num2) {
 
 	dataFile.close();
 }
+
+
