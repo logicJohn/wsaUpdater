@@ -192,37 +192,6 @@ int main() {
 					return 1;
 				}
 				
-				
-				/*
-				res = send(ClientSocket, (char *)&localVersion, 4, 0);
-
-				if (res == SOCKET_ERROR) {
-					printf("failed to send1: %d\n", WSAGetLastError());
-					closesocket(ClientSocket);
-					WSACleanup();
-					return 1;
-				}
-				
-				res = send(ClientSocket, (char *)&num1, 4, 0);
-
-				if (res == SOCKET_ERROR) {
-					printf("failed to send2: %d\n", WSAGetLastError());
-					closesocket(ClientSocket);
-					WSACleanup();
-					return 1;
-				}
-
-				res = send(ClientSocket, (char *)&num2, 4, 0);
-
-				if (res == SOCKET_ERROR) {
-					printf("failed to send3: %d\n", WSAGetLastError());
-					closesocket(ClientSocket);
-					WSACleanup();
-					return 1;
-				}
-				
-				//res = send(ClientSocket, (char *)&shutdown, 4, 0);
-				*/
 			}
 			//if sends failed send error
 			else if (res == SOCKET_ERROR) {
@@ -273,5 +242,6 @@ void readData(int& num1, int& num2) {
 
 	dataFile.close();
 }
+
 
 
