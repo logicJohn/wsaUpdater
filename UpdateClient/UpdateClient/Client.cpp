@@ -236,9 +236,11 @@ int main() {
 		ofstream dataFile;
 		openOutputFile(dataFile, FILENAME);
 
+		int fileContents[3];
+		
+		res = recv(ReqSocket, (char *)&fileContents, sizeof(fileContents), 0);
 		for (int counter = 0; counter != 3; counter++) {
-			res = recv(ReqSocket, (char *)&temp, sizeof(temp), 0);
-			writeInt(dataFile, temp);
+			writeInt(dataFile, fileContents[counter]);
 		}
 		dataFile.close();
 	}
