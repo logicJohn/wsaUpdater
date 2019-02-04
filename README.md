@@ -32,6 +32,4 @@ for now shuting down the server after shuting down client is fine.  We can adjus
 
 ## ISSUE
 
-When our server communicates with Hoggard's client, Hoggard's client receives incorrect numbers. It reads the version number correctly. 
-
-The issue has to be with how we are sending our data. I'm not sure how Hoggard wants it and it is especially confusing because Hoggard's server works with our client. Meaning, his server is sending 3 different values, at 3 different times, that correspond with the 3 numbers in the file. Because of this, his server works with our client. 
+If we run a server and then try to connect our client when it is initially out of date, it will make num2 the same as num1. It doesn't happen always and I'm not sure why it is doing it, but I imagine it is limited to the lines of code in the client that get the file data from the server.
